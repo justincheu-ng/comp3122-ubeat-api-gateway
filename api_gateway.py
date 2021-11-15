@@ -1,4 +1,6 @@
 import flask
+import pymongo
+import redis
 
 flask_app = flask.Flask(__name__)
 mongo_client = pymongo.MongoClient('mongodb://comp3122:23456@user_db:27017')
