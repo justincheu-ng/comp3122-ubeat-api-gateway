@@ -1,6 +1,8 @@
 flask
+flask_prometheus_metrics
 hashlib
 json
+prometheus_flask_exporter
 pyjwt
 pymongo
 redis
