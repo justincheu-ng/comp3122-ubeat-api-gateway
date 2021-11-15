@@ -3,15 +3,25 @@ import jwt
 import pymongo
 import redis
 
+
+##############################
+# Init library / connections
+##############################
 flask_app = flask.Flask(__name__)
 mongo_client = pymongo.MongoClient('mongodb://comp3122:23456@user_db:27017')
 redis_conn = redis.Redis(host='message_queue', port=6379)
 
 
+####################
+# Define functions 
+####################
 def generate_token(user_info):
     return jwt.encode(user_info, "secretPassword", algorithm="HS256")
 
 
+##########################
+# Flask endpoints: login
+##########################
 @flask_app.route('/login', methods=['POST'])
 def api_login():
     # Get login credentials
@@ -42,6 +52,9 @@ def api_login():
     return {'token': generate_token(user)}, 200
 
 
+##########################
+# Start flask
+##########################
 if __name__ == '__main__':
     flask_app.run(host='0.0.0.0', debug=True, port=15000)
     
