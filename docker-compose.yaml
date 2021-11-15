@@ -10,3 +10,18 @@ services:
     build: .
     ports:
       - 15000:15000
+  user_db:
+    container_name: user_db
+    image: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: comp3122
+      MONGO_INITDB_ROOT_PASSWORD: 23456
+      MONGO_INITDB_DATABASE: admin
+    expose:
+      - 27017
+    volumes:
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - user_db:/data/db
+volumes:
+  user_db:
+    name: user_db
