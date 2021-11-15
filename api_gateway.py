@@ -115,6 +115,43 @@ def get_restaurant_order(restaurant_id):
     response = requests.get('http://restaurant_order:15000/'+restaurant_id)
     return flask.jsonify(response.json()), response.status_code
 
+@flask_app.route('/order', methods=['POST'])
+def post_order():
+    # Authenticate token
+    token = flask.request.args.get('token')
+    if not token:
+        return {'error': 'token is required'}, 401
+    user = authenticate_token(token)
+    if not user:
+        return {'error': 'invalid token'}, 403
+    if user['group'] != 'customer':
+        return {'error': 'you do not have the permission to perform this request'}, 403
+    
+    # Check if food existsd
+    restaurant_id = flask.request.args.get('restaurant_id')
+    if not restaurant_id:
+        return {'error', 'restaurant_id is required'}, 400
+    food_id = flask.request.args.get('food_id')
+    if not food_id:
+        return {'error', 'food_id is required'}, 400
+    response = requests.get('http://menu:15000/'+restaurant_id+'/'+food_id)
+    if response.status_code == 404:
+        return flask.jsonify(response.json()), response.status_code
+    
+    # Create order_id and load
+    order_id = hash(str(user['id'])+str(datetime.datetime.now().timestamp))
+    load = json.dumps({
+        'order_id': order_id,
+        'user_id': user['id'],
+        'restaurant_id': restaurant_id,
+        'food_id': food_id
+    })
+
+    # Add order to restaurant
+    redis_conn.publish('restaurantOrder_newOrder', load)
+    redis_conn.publish('customerOrder_newOrder', load)
+    return {'order_id': order_id}, 200
+
 
 ##########################
 # Start flask
