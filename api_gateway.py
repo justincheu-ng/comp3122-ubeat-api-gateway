@@ -235,9 +235,9 @@ def put_order(order_id):
         # For action arrived
         if arrived:
             # Check if order exists in restaurant
-            response = requests.get('http://delivery_order:15000/'+order_id)
-            if response.status_code == 404:
-                return {'error': 'order id not in delivery order'}, 404
+            #response = requests.get('http://delivery_order:15000/'+order_id)
+            #if response.status_code == 404:
+            #    return {'error': 'order id not in delivery order'}, 404
             arrived = bool_in_str_to_zero_one(arrived)
             print(arrived, order_id, flush=True)
             # Send event to delivery
