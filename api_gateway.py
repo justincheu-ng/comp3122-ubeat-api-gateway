@@ -16,9 +16,28 @@ redis_conn = redis.Redis(host='message_queue', port=6379)
 ####################
 # Define functions 
 ####################
+def hash(text):
+    return hashlib.md5(text.encode()).hexdigest()
+
 def generate_token(user_info):
     return jwt.encode(user_info, "secretPassword", algorithm="HS256")
 
+def authenticate_token(token):
+    if not token:
+        return None
+    try:
+        decode = jwt.decode(token, "secretPassword", algorithms=["HS256"], require=['id', 'group'])
+    except:
+        return None
+    return decode
+
+def bool_in_str_to_zero_one(str):
+    str = str.lower()
+    if str == 'true':
+        return 1
+    elif str == 'false':
+        return 0
+    return None
 
 ##########################
 # Flask endpoints: login
