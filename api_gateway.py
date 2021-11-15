@@ -71,6 +71,28 @@ def get_a_food(restaurant_id, food_id):
     response = requests.get('http://menu:15000/'+restaurant_id+'/'+food_id)
     return flask.jsonify(response.json()), response.status_code
 
+
+@flask_app.route('/menu/<restaurant_id>', methods=['POST'])
+def add_a_food(restaurant_id):
+    food_name = flask.request.args.get('food_name')
+    food_price = flask.request.args.get('food_price')
+    if not food_name or not food_price:
+        return {'error': 'provide food_name and food_price in path'}, 400
+    response = requests.post('http://menu:15000/'+restaurant_id+'?food_name='+food_name+'&food_price='+food_price)
+    return {'food_id': response.json()['food_id']}, 201
+
+@flask_app.route('/menu/<restaurant_id>/<food_id>', methods=['DELETE'])
+def delete_a_food(restaurant_id, food_id):
+    response = requests.get('http://menu:15000/'+restaurant_id+'/'+food_id)
+    if response.status_code == 404:
+        return flask.jsonify(response.json()), response.status_code
+    load = json.dumps({
+        'restaurant_id': restaurant_id,
+        'food_id': food_id
+    })
+    redis_conn.publish('menu_deleteFood', load)
+    return '', 204
+
 ##########################
 # Start flask
 ##########################
