@@ -93,6 +93,29 @@ def delete_a_food(restaurant_id, food_id):
     redis_conn.publish('menu_deleteFood', load)
     return '', 204
 
+
+##########################
+# Flask endpoints: order 
+##########################
+@flask_app.route('/order/<restaurant_id>', methods=['GET'])
+def get_restaurant_order(restaurant_id):
+    # Authentication token
+    token = flask.request.args.get('token')
+    if not token:
+        return {'error': 'token is required'}, 401
+    user = authenticate_token(token)
+    if not user:
+        return {'error': 'invalid token'}, 403
+    if user['group'] != 'restaurant':
+        return {'error': 'you do not have the permission to perform this request'}, 403
+    if user['id'] != int(restaurant_id):
+        return {'error': 'you do not have the permission to perform this request'}, 403
+    
+    # Perform request
+    response = requests.get('http://restaurant_order:15000/'+restaurant_id)
+    return flask.jsonify(response.json()), response.status_code
+
+
 ##########################
 # Start flask
 ##########################
