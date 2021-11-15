@@ -66,6 +66,10 @@ def get_a_menu(restaurant_id):
     response = requests.get('http://menu:15000/'+restaurant_id)
     return flask.jsonify(response.json()), response.status_code
 
+@flask_app.route('/menu/<restaurant_id>/<food_id>', methods=['GET'])
+def get_a_food(restaurant_id, food_id):
+    response = requests.get('http://menu:15000/'+restaurant_id+'/'+food_id)
+    return flask.jsonify(response.json()), response.status_code
 
 ##########################
 # Start flask
