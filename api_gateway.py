@@ -152,6 +152,109 @@ def post_order():
     redis_conn.publish('customerOrder_newOrder', load)
     return {'order_id': order_id}, 200
 
+@flask_app.route('/order/<order_id>', methods=['PUT'])
+def put_order(order_id):
+    # Authenticate token
+    token = flask.request.args.get('token')
+    if not token:
+        return {'error': 'token is required'}, 401
+    user = authenticate_token(token)
+    if not user:
+        return {'error': 'invalid token'}, 403
+    if user['group'] == 'customer':
+        return {'error': 'you do not have the permission to perform this request'}, 403
+
+
+    if user['group'] == 'restaurant':
+        # Check if order exists in restaurant
+        response = requests.get('http://restaurant_order:15000/order/'+order_id)
+        if response.status_code == 404:
+            return {'error': 'order id not in restaurant order'}, 404
+        ########
+        # check if order is your restaurant
+        ########
+        if response.json()['restaurant_id'] != user['id']:
+            return {'error': 'order id is not your restaurant\'s '}, 403
+
+        # Get arguments prepared 
+        prepared = flask.request.args.get('prepared')
+        if not prepared:
+            return {'error: action is needed (i.e. prepared)'}, 400
+        prepared = bool_in_str_to_zero_one(prepared)
+        if prepared == None:
+            return {'error: prepared should be true or false)'}, 400
+
+        # Send event
+        load = json.dumps({
+            'order_id': order_id,
+            'prepared': prepared
+        })
+        redis_conn.publish('restaurantOrder_setPrepared', load)
+        return '', 204
+
+    # For action shipped
+    if user['group'] == 'delivery':
+        # Check arguments exists
+        shipped = flask.request.args.get('shipped')
+        arrived = flask.request.args.get('arrived')
+        if shipped == None != arrived == None:
+            return {'error: argument shipped and arrived is mutual exclusive'}, 400
+
+
+        # Action to set ship
+        if shipped:
+            # Check if order exists in restaurant
+            response = requests.get('http://restaurant_order:15000/order/'+order_id)
+            if response.status_code == 404:
+                return {'error': 'order id not in restaurant order'}, 404
+            response_content = response.json()
+            # Check if order is prepared by the restaurant
+            if response_content['prepare'] == 0:
+                return {'error': 'order id not in restaurant order'}, 425
+
+            # Send event to restaurant to set delivery
+            customer_id = response_content['customer_id']
+            restaurant_id = response_content['customer_id']
+            
+            load = json.dumps({
+                'order_id': order_id,
+                'delivery_id': user['id']
+            })
+            redis_conn.publish('restaurantOrder_setShipped', load)
+
+            # Send event to delivery to insert row
+            load = json.dumps({
+                'order_id': order_id,
+                'delivery_id': user['id'],
+                'restaurant_id': restaurant_id,
+                'customer_id': customer_id
+            })
+            redis_conn.publish('deliveryOrder_setShipped', load)
+            return '', 204
+
+        # For action arrived
+        if arrived:
+            # Check if order exists in restaurant
+            response = requests.get('http://delivery_order:15000/'+order_id)
+            if response.status_code == 404:
+                return {'error': 'order id not in delivery order'}, 404
+            arrived = bool_in_str_to_zero_one(arrived)
+            print(arrived, order_id, flush=True)
+            # Send event to delivery
+            load = json.dumps({
+                'order_id': order_id,
+                'taken': arrived
+            })
+            redis_conn.publish('deliveryOrder_setTaken', load)
+
+            # Send event to customer
+            load = json.dumps({
+                'order_id': order_id,
+                'taken': arrived
+            })
+            redis_conn.publish('customerOrder_setTaken', load)
+            return '', 204
+
 
 ##########################
 # Start flask
