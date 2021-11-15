@@ -1,4 +1,5 @@
 flask
+json
 pyjwt
 pymongo
 redis
