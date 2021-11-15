@@ -52,6 +52,15 @@ def api_login():
     return {'token': generate_token(user)}, 200
 
 
+#########################
+# Flask endpoints: menu
+#########################
+@flask_app.route('/menu', methods=['GET'])
+def get_menu():
+    response = requests.get('http://menu:15000')
+    return flask.jsonify(response.json()), response.status_code
+
+
 ##########################
 # Start flask
 ##########################
