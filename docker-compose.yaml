@@ -1,0 +1,12 @@
+version: '3.3'
+services:
+  message_queue:
+    container_name: message_queue
+    image: redis
+    expose:
+      - 6379
+  api_gateway:
+    container_name: api_gateway
+    build: .
+    ports:
+      - 15000:15000
